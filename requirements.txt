@@ -1,0 +1,13 @@
+torch
+transformers
+datasets
+sacrebleu
+sentencepiece
+protobuf
+pandas
+scikit-learn
+tqdm
+matplotlib
+nbformat
+peft
+bitsandbytes

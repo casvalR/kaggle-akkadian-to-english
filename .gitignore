@@ -1,0 +1,39 @@
+# Virtual environments
+.venv-translate/
+venv/
+.venv/
+env/
+
+# Data directory
+data/
+
+# Model outputs
+results/
+*.pt
+*.bin
+*.safetensors
+
+# Experiment logs (keep template, ignore generated)
+experiment_log.csv
+
+# Generated notebook
+submission_kaggle.ipynb
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

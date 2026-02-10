@@ -30,6 +30,9 @@ build/
 # Jupyter
 .ipynb_checkpoints/
 
+# Kaggle model weights (large files)
+kaggle_models/
+
 # OS
 .DS_Store
 Thumbs.db

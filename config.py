@@ -233,6 +233,54 @@ EXPERIMENT_CONFIGS = {
         "task_prefix": "<2en> ",
         "description": "MADLAD-400-3B with LoRA, 450 languages",
     },
+    # --- 新規モデル (Phase 2+) ---
+    "byt5_base_v2": {
+        "model_name": "google/byt5-base",
+        "model_type": "seq2seq",
+        "preprocess": "basic",
+        "use_dict": False,
+        "lr": 5e-4,
+        "batch_size": 4,
+        "use_lora": False,
+        "max_source_length": 512,
+        "max_target_length": 256,
+        "task_prefix": "translate Akkadian to English: ",
+        "description": "ByT5-base v2 (高LR, 長シーケンス, Discussion推奨設定)",
+    },
+    "mbart_50": {
+        "model_name": "facebook/mbart-large-50-many-to-one-mmt",
+        "model_type": "seq2seq",
+        "preprocess": "basic",
+        "use_dict": False,
+        "src_lang": "ar_AR",
+        "tgt_lang": "en_XX",
+        "lr": 3e-5,
+        "batch_size": 4,
+        "use_lora": True,
+        "lora_r": 16,
+        "lora_alpha": 32,
+        "lora_dropout": 0.05,
+        "max_source_length": 128,
+        "max_target_length": 128,
+        "description": "mBART-50 many-to-one with LoRA (ar_AR→en_XX proxy)",
+    },
+    "nllb_1_3b_lora": {
+        "model_name": "facebook/nllb-200-distilled-1.3B",
+        "model_type": "seq2seq",
+        "preprocess": "moderate",
+        "use_dict": True,
+        "src_lang": "akk_Xsux",
+        "tgt_lang": "eng_Latn",
+        "lr": 2e-5,
+        "batch_size": 4,
+        "use_lora": True,
+        "lora_r": 16,
+        "lora_alpha": 32,
+        "lora_dropout": 0.05,
+        "max_source_length": 196,
+        "max_target_length": 128,
+        "description": "NLLB-1.3B distilled with LoRA + dictionary",
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -248,4 +296,38 @@ TRAINING_DEFAULTS = {
     "evaluation_strategy": "epoch",
     "logging_steps": 50,
     "seed": 42,
+}
+
+# ---------------------------------------------------------------------------
+# Optuna ハイパーパラメータ探索範囲
+# ---------------------------------------------------------------------------
+
+HYPERPARAM_SEARCH_SPACE = {
+    "nllb_600m_dict": {
+        "lr": (1e-5, 1e-4, "log"),
+        "batch_size": [4, 8, 16],
+        "max_source_length": [128, 196, 256],
+        "warmup_ratio": (0.05, 0.2),
+        "weight_decay": (0.001, 0.1, "log"),
+    },
+    "byt5_base_v2": {
+        "lr": (1e-4, 1e-3, "log"),
+        "batch_size": [4, 8],
+        "max_source_length": [256, 512],
+        "warmup_ratio": (0.05, 0.2),
+        "weight_decay": (0.001, 0.1, "log"),
+    },
+    "mbart_50": {
+        "lr": (1e-5, 5e-5, "log"),
+        "batch_size": [4, 8],
+        "warmup_ratio": (0.05, 0.2),
+        "weight_decay": (0.001, 0.1, "log"),
+    },
+    "nllb_1_3b_lora": {
+        "lr": (5e-6, 5e-5, "log"),
+        "lora_r": [8, 16, 32],
+        "batch_size": [2, 4, 8],
+        "warmup_ratio": (0.05, 0.2),
+        "weight_decay": (0.001, 0.1, "log"),
+    },
 }

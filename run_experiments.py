@@ -153,6 +153,11 @@ def load_model_and_tokenizer(config: dict, device: torch.device):
             tokenizer.src_lang = config["src_lang"]
         except Exception:
             print(f"[WARN] Could not set src_lang={config['src_lang']}, using default")
+    if "tgt_lang" in config:
+        try:
+            tokenizer.tgt_lang = config.get("tgt_lang", "eng_Latn")
+        except Exception:
+            print(f"[WARN] Could not set tgt_lang={config['tgt_lang']}, using default")
 
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
@@ -292,6 +297,7 @@ def run_single_experiment(
     num_epochs: int = 3,
     early_stopping_patience: int = 0,
     dictionary: dict | None = None,
+    epoch_callback=None,
 ):
     """1つの実験設定を実行し、メトリクスを返す"""
     print(f"\n{'='*60}")
@@ -362,6 +368,10 @@ def run_single_experiment(
         print(f"  Epoch {epoch+1}/{num_epochs} | Loss: {avg_loss:.4f} | "
               f"BLEU: {metrics['bleu']:.2f} | chrF++: {metrics['chrf']:.2f} | "
               f"GeoMean: {metrics['geo_mean']:.2f}")
+
+        # Epoch callback (for Optuna pruning etc.)
+        if epoch_callback is not None:
+            epoch_callback(epoch, metrics)
 
         if metrics["geo_mean"] > best_geo_mean:
             best_geo_mean = metrics["geo_mean"]
@@ -539,7 +549,7 @@ def main():
     # ------------------------------------------------------------------
     if args.phase in (0, 1):
         print("\n" + "=" * 70)
-        print("PHASE 1: Fast Screening (3 epochs, fold 0)")
+        print("PHASE 1: Fast Screening (10 epochs, fold 0)")
         print("=" * 70)
 
         if args.experiments == "all":
@@ -556,7 +566,7 @@ def main():
                 result = run_single_experiment(
                     exp_name, config,
                     train_src, train_tgt, val_src, val_tgt,
-                    device, num_epochs=3,
+                    device, num_epochs=10,
                     dictionary=dictionary if config.get("use_dict") else None,
                 )
                 result["phase"] = 1
@@ -587,7 +597,7 @@ def main():
     # ------------------------------------------------------------------
     if args.phase in (0, 2):
         print("\n" + "=" * 70)
-        print("PHASE 2: Mid-depth Evaluation (15 epochs, top 3, early stopping)")
+        print("PHASE 2: Mid-depth Evaluation (25 epochs, top 3, early stopping)")
         print("=" * 70)
 
         # Phase 1の結果から上位3を選択
@@ -610,7 +620,7 @@ def main():
                 result = run_single_experiment(
                     f"{exp_name}_p2", config,
                     train_src, train_tgt, val_src, val_tgt,
-                    device, num_epochs=15,
+                    device, num_epochs=25,
                     early_stopping_patience=3,
                     dictionary=dictionary if config.get("use_dict") else None,
                 )
@@ -632,7 +642,7 @@ def main():
     # ------------------------------------------------------------------
     if args.phase in (0, 3):
         print("\n" + "=" * 70)
-        print("PHASE 3: Final Training (best config, all data, 20 epochs)")
+        print("PHASE 3: Final Training (best config, all data, 30 epochs)")
         print("=" * 70)
 
         # 最良設定を特定
@@ -652,7 +662,7 @@ def main():
             best_exp, config,
             sources, targets,
             test_sources, test_ids,
-            device, num_epochs=20,
+            device, num_epochs=30,
             output_dir=final_output,
             dictionary=dictionary if config.get("use_dict") else None,
         )
